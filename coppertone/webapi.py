@@ -29,6 +29,10 @@ class _CoppertoneServerRequestHandler(BaseHTTPRequestHandler):
     def _monitor(self) -> TweetMonitor:
         return self.server.coppertone.monitor
 
+    def log_message(self, format: str, *args: Any) -> None:
+        # Silence log output.
+        pass
+
     def do_GET(self):
         if self.path == '/' or self.path == '/tweets':
             self.render_tweets()
