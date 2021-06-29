@@ -6,9 +6,6 @@ from typing import Dict, Any
 
 import requests
 
-
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 HEADER_AUTHORIZATION = "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA"
 HEADER_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.116 Safari/537.36"
 
@@ -108,66 +105,9 @@ class Twisc:
         entries = result_json['timeline']['instructions'][0]['addEntries']['entries']
 
 
-
-
-
-def build_headers() -> Dict[str, str]:
-    # noinspection PyDictCreation
-    r_headers: Dict[str] = {}
-
-    r_headers["authority"] = "twitter.com"
-    r_headers["pragma"] = "no-cache"
-    r_headers["accept"] = "*/*"
-    r_headers["Content-Type"] = "application/json"
-    r_headers["sec-fetch-site"] = "same-origin"
-    r_headers["sec-fetch-mode"] = "cors"
-    r_headers["sec-fetch-dest"] = "empty"
-    r_headers["accept-language"] = "en-GB,en;q=0.9"
-    r_headers["cache-control"] = "no-cache"
-    r_headers["x-twitter-client-language"] = "en-GB"
-    r_headers["x-twitter-active-user"] = "yes"
-    r_headers["authorization"] = HEADER_AUTHORIZATION
-    r_headers["x-csrf-token"] = "427effda2d5ef6e0d5a0008b347e92bc"
-    r_headers["x-guest-token"] = refresh_guest_token()
-    r_headers["user-agent"] = HEADER_USER_AGENT
-    r_headers["referer"] = "https://twitter.com/sample"
-
-    return r_headers
-
-
-def build_query_url() -> str:
-    base = "https://twitter.com/i/api/graphql/TcBvfe73eyQZSx3GW32RHQ/UserTweets?variables="
-    variables = {
-        "userId": "751173",
-        "count": 20,
-        "withHighlightedLabel": True,
-        "withTweetQuoteCount": True,
-        "includePromotedContent": False,
-        "withTweetResult": True,
-        "withReactions": False,
-        "withSuperFollowsTweetFields": False,
-        "withUserResults": False,
-        "withVoice": False,
-        "withNonLegacyCard": False,
-        "withBirdwatchPivots": False
-    }
-
-    return base + urllib.parse.quote_plus(json.dumps(variables))
-
-
-def do_request():
-    url = build_query_url()
-    r_headers = build_headers()
-
-    raw_result = requests.get(url, headers=r_headers)
-    result_text = raw_result.text
-    result = raw_result.json()
-
-    # discard trash
-    result = result['data']['user']['result']['timeline']['timeline']
-
-    print(raw_result)
-
+#
+#
+#
 
 def main():
     # Use a breakpoint in the code line below to debug your script.
@@ -178,8 +118,5 @@ def main():
     twisc.get_user_tweets(user_id)
 
 
-# Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     main()
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
