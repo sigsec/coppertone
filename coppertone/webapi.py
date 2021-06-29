@@ -1,17 +1,16 @@
 import json
 import threading
-from datetime import datetime
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 
 from coppertone import TweetMonitor
 
 
 class CoppertoneServer:
-    def __init__(self, monitor: TweetMonitor):
+    def __init__(self, port: int, monitor: TweetMonitor):
         self.monitor = monitor
 
-        self.server = HTTPServer(("", 8080), _CoppertoneServerRequestHandler)
+        self.server = HTTPServer(("", port), _CoppertoneServerRequestHandler)
         self.server.coppertone = self
 
         self.server_thread = threading.Thread(target=self.server.serve_forever)
@@ -51,5 +50,6 @@ class _CoppertoneServerRequestHandler(BaseHTTPRequestHandler):
     def render_status(self):
         self._render_dict_as_json({
             "server_started": self._monitor.start_dt,
-            "twitter_handle": self._monitor.twitter_username,
+            "monitor_poll_rate": self._monitor.poll_rate,
+            "twitter_handle": self._monitor.twitter_handle,
         })

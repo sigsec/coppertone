@@ -12,17 +12,18 @@ logger = logging.getLogger(__name__)
 
 
 class TweetMonitor:
-    def __init__(self, twitter_username: str):
-        self.twitter_username = twitter_username
+    def __init__(self, twitter_handle: str, poll_rate: int):
+        self.twitter_handle = twitter_handle
+        self.poll_rate = poll_rate
         self.start_dt: Optional[datetime] = None
 
     def run(self):
-        logger.info("Program will monitor account '%s'" % self.twitter_username)
+        logger.info("Program will monitor account '%s'" % self.twitter_handle)
         self.start_dt = datetime.utcnow()
 
         twisc = Twisc()
 
-        user_id = twisc.get_user_id(self.twitter_username)
+        user_id = twisc.get_user_id(self.twitter_handle)
 
         twisc.get_user_tweets(user_id)
 
