@@ -1,10 +1,15 @@
 # This is a sample Python script.
 import json
 import re
+import sys
 import urllib.parse
 from typing import Dict, Any
 
 import requests
+
+import logging
+logging.basicConfig()
+logger = logging.getLogger(__name__)
 
 HEADER_AUTHORIZATION = "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA"
 HEADER_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.116 Safari/537.36"
@@ -110,10 +115,18 @@ class Twisc:
 #
 
 def main():
-    # Use a breakpoint in the code line below to debug your script.
+    if len(sys.argv) < 2:
+        logger.warning("No username provided!")
+    if len(sys.argv) != 2:
+        logger.info("This program must be run with exactly one argument - the twitter handle of the account to monitor.")
+        return
+
+    requested_username = sys.argv[1]
+    logger.debug("Program will monitor account '%s'" % requested_username)
+
     twisc = Twisc()
 
-    user_id = twisc.get_user_id('TwitterDev')
+    user_id = twisc.get_user_id(requested_username)
 
     twisc.get_user_tweets(user_id)
 
