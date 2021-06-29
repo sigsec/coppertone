@@ -8,8 +8,13 @@ from typing import Dict, Any
 import requests
 
 import logging
-logging.basicConfig()
+
+import coppertone
+
+logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(levelname)s %(threadName)s %(name)s %(message)s",)
 logger = logging.getLogger(__name__)
+
+WEBAPI_ENABLED = True
 
 HEADER_AUTHORIZATION = "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA"
 HEADER_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.116 Safari/537.36"
@@ -122,7 +127,13 @@ def main():
         return
 
     requested_username = sys.argv[1]
-    logger.debug("Program will monitor account '%s'" % requested_username)
+
+    monitor = coppertone.TweetMonitor(sys.argv[1])
+    webapi = coppertone.CoppertoneServer(monitor)
+
+    if WEBAPI_ENABLED:
+        logger.info("Web API is enabled.")
+        webapi.run()
 
     twisc = Twisc()
 
