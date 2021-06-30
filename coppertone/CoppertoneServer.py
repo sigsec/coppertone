@@ -55,6 +55,7 @@ class _CoppertoneServerRequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
         self.wfile.write(bytes(json.dumps(obj, default=str), "UTF-8"))
+        self.wfile.write(bytes('\n', "UTF-8"))
 
     def render_tweets(self):
         self._render_obj_as_json(self._monitor.tweets)
