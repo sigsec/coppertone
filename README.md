@@ -33,6 +33,8 @@ Extension 2:
 
 **Error handling:** There were no stipulations about error handling. Consequently, only minimal error handling has been added covering exclusively the most common issues (no handle provided, handle does not exist, token has expired).
 
+**Use of Tweepy:** The instructions do indicate that this library should not be used for the core logic. It should be known that their code was used for reference; specifically, for the URLs required and to confirm my understand of the guest token.
+
 
 
 ## Sample output
