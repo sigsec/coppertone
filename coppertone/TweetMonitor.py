@@ -65,7 +65,7 @@ class Twisc:
     def _query_encode(variables: Dict[str, Any]) -> str:
         return urllib.parse.quote_plus(json.dumps(variables))
 
-    def get_user_id(self, username: str) -> str:
+    def get_user_id(self, username: str) -> Optional[str]:
         base = "https://api.twitter.com/graphql/jMaTS-_Ea8vh9rpKggJbCQ/UserByScreenName?variables="
         variables = {
             'screen_name': username,
@@ -75,32 +75,15 @@ class Twisc:
         result = self._session.get(base + self._query_encode(variables))
         result_json = result.json()
 
-        return result_json['data']['user']['rest_id']
+        if len(result_json['data']) == 0:
+            # User not found.
+            return None
 
-    def get_user_tweets_deprecated(self, user_id: str):
-        base = "https://twitter.com/i/api/graphql/TcBvfe73eyQZSx3GW32RHQ/UserTweets?variables="
-        variables = {
-            "userId": user_id,
-            "count": 20,
-            "withHighlightedLabel": True,
-            "withTweetQuoteCount": True,
-            "includePromotedContent": False,
-            "withTweetResult": True,
-            "withReactions": False,
-            "withSuperFollowsTweetFields": False,
-            "withUserResults": False,
-            "withVoice": False,
-            "withNonLegacyCard": False,
-            "withBirdwatchPivots": False
-        }
-
-        result = self._session.get(base + self._query_encode(variables))
-        result_json = result.json()
-
-        # discard trash
-        result_json = result_json['data']['user']['result']['timeline']['timeline']
+        user_id: str = result_json['data']['user']['rest_id']
+        return user_id
 
     def get_user_tweets(self, user_id: str):
+        """Fetch tweets for the given user ID, and return them sorted oldest to newest."""
         base = f"https://api.twitter.com/2/timeline/profile/{user_id}.json"
         variables = {
             'include_profile_interstitial_type': '1',

@@ -1,7 +1,7 @@
 import json
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from typing import Dict, Any
+from typing import Any
 
 from coppertone import TweetMonitor
 
@@ -12,6 +12,7 @@ class CoppertoneServer:
 
         self.server = HTTPServer(("", port), _CoppertoneServerRequestHandler)
         self.server.coppertone = self
+        self.requests_handled = 0
 
         self.server_thread = threading.Thread(target=self.server.serve_forever)
         self.server_thread.setDaemon(True)
@@ -26,8 +27,13 @@ class CoppertoneServer:
 class _CoppertoneServerRequestHandler(BaseHTTPRequestHandler):
 
     @property
+    def _server(self) -> CoppertoneServer:
+        # noinspection PyUnresolvedReferences
+        return self.server.coppertone
+
+    @property
     def _monitor(self) -> TweetMonitor:
-        return self.server.coppertone.monitor
+        return self._server.monitor
 
     def log_message(self, format: str, *args: Any) -> None:
         # Silence log output.
@@ -38,8 +44,12 @@ class _CoppertoneServerRequestHandler(BaseHTTPRequestHandler):
             self.render_tweets()
         elif self.path == '/status':
             self.render_status()
+        else:
+            return
 
-    def _render_dict_as_json(self, obj: Dict[str, Any]) -> None:
+        self._server.requests_handled += 1
+
+    def _render_obj_as_json(self, obj: Any) -> None:
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
         self.end_headers()
@@ -47,9 +57,7 @@ class _CoppertoneServerRequestHandler(BaseHTTPRequestHandler):
         self.wfile.write(bytes(json.dumps(obj, default=str), "UTF-8"))
 
     def render_tweets(self):
-        self._render_dict_as_json({
-            "bogus": "test"
-        })
+        self._render_obj_as_json(self._monitor.tweets)
 
     def render_status(self):
         self._render_dict_as_json({
