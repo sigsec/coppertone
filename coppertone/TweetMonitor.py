@@ -48,6 +48,10 @@ class TweetMonitor:
     def _fetch_initial_tweets(self, num_initial_tweets: int):
         logger.debug("Fetching %d initial tweets..." % num_initial_tweets)
         tweets = self.twisc.get_user_tweets(self.user_id)
+        if tweets is None:
+            logger.warning("Failed to fetch initial tweets for user!")
+            return
+
         tweets = tweets[-num_initial_tweets:]
 
         self._notify_user_of_tweets(tweets)
@@ -55,21 +59,24 @@ class TweetMonitor:
     def _fetch_subsequent_tweets(self):
         logger.debug("Waking and checking for new tweets ...")
         tweets = self.twisc.get_user_tweets(self.user_id)
+        if tweets is None:
+            logger.warning("Failed to fetch tweets for user!")
+            return
+
+        last_recent_dt = datetime.strptime(self.tweets[-1]['created_at'], '%a %b %d %H:%M:%S %z %Y')
 
         new_tweets = filter(
-            lambda x: not any(x['id_str'] == y['id_str'] for y in self.tweets),
+            lambda x: datetime.strptime(x['created_at'], '%a %b %d %H:%M:%S %z %Y') > last_recent_dt,
             tweets)
 
         self._notify_user_of_tweets(new_tweets)
 
     def _notify_user_of_tweets(self, tweets: Iterable[Dict[str, Any]]):
+        tweets = list(tweets)
+        logger.debug("Found %d new tweets" % len(tweets))
         for tweet in tweets:
             logger.info("Tweet at %s: %s" % (tweet['created_at'], tweet['full_text']))
             self.tweets.append(tweet)
-
-
-
-
 
 
 #
@@ -103,6 +110,21 @@ class Twisc:
     def _query_encode(variables: Dict[str, Any]) -> str:
         return urllib.parse.quote_plus(json.dumps(variables))
 
+    def _perform_get(self, url: str, **kwargs) -> Optional[requests.Response]:
+        result = self._session.get(url, **kwargs)
+
+        # If we got a 403 error, chances are our guest token has expired.
+        # Try to refresh it and then issue the request again.
+        if result.status_code == 403:
+            self._update_guest_token()
+            result = self._session.get(url, **kwargs)
+
+        # If we still have 403, assume bad request and return null.
+        if result.status_code == 403:
+            return None
+
+        return result
+
     def get_user_id(self, username: str) -> Optional[str]:
         base = "https://api.twitter.com/graphql/jMaTS-_Ea8vh9rpKggJbCQ/UserByScreenName?variables="
         variables = {
@@ -110,9 +132,11 @@ class Twisc:
             'withHighlightedLabel': False,
         }
 
-        result = self._session.get(base + self._query_encode(variables))
-        result_json = result.json()
+        result = self._perform_get(base + self._query_encode(variables))
+        if result is None:
+            return None
 
+        result_json = result.json()
         if len(result_json['data']) == 0:
             # User not found.
             return None
@@ -120,7 +144,7 @@ class Twisc:
         user_id: str = result_json['data']['user']['rest_id']
         return user_id
 
-    def get_user_tweets(self, user_id: str):
+    def get_user_tweets(self, user_id: str) -> Optional[Iterable[Dict[str, Any]]]:
         """Fetch tweets for the given user ID, and return them sorted oldest to newest."""
         base = f"https://api.twitter.com/2/timeline/profile/{user_id}.json"
         variables = {
@@ -150,10 +174,13 @@ class Twisc:
             'ext': 'mediaStats%2ChighlightedLabel',
         }
 
-        result = self._session.get(base, params=variables)
+        result = self._perform_get(base, params=variables)
+        if result is None:
+            return None
+
         result_json = result.json()
 
-        all_tweets: List[Dict[str, Any]] = sorted(
+        all_tweets = sorted(
             result_json['globalObjects']['tweets'].values(),
             key=lambda x: datetime.strptime(x['created_at'], '%a %b %d %H:%M:%S %z %Y'),
             )
