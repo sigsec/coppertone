@@ -3,7 +3,7 @@ import logging
 import re
 import time
 import urllib.parse
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List, Iterable
 
 import requests
@@ -14,8 +14,10 @@ logger = logging.getLogger(__name__)
 class TweetMonitor:
     def __init__(self, twitter_handle: str, poll_rate: int):
         self.twitter_handle = twitter_handle
-        self.poll_rate = poll_rate
         self.start_dt: Optional[datetime] = None
+        self.poll_rate = poll_rate
+        self.last_wake: Optional[datetime] = None
+        self.next_wake: Optional[datetime] = None
 
         self.twisc = Twisc()
         self.user_id: Optional[str] = None
@@ -34,7 +36,10 @@ class TweetMonitor:
         self._fetch_initial_tweets(num_initial_tweets)
 
         while True:
+            self.next_wake = datetime.utcnow() + timedelta(seconds=self.poll_rate)
             time.sleep(self.poll_rate)
+            self.last_wake = datetime.utcnow()
+
             self._fetch_subsequent_tweets()
 
     def stop(self):

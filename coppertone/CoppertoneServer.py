@@ -68,7 +68,9 @@ class _CoppertoneServerRequestHandler(BaseHTTPRequestHandler):
             "monitor": {
                 "twitter_handle": self._monitor.twitter_handle,
                 "user_id": self._monitor.user_id,
-                "poll_rate": self._monitor.poll_rate,
                 "num_tweets_cached": len(self._monitor.tweets),
+                "poll_rate": self._monitor.poll_rate,
+                "last_wake": self._monitor.last_wake,
+                "next_wake": self._monitor.next_wake,
             },
         })
