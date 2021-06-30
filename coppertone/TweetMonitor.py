@@ -4,7 +4,7 @@ import re
 import time
 import urllib.parse
 from datetime import datetime
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List, Iterable
 
 import requests
 
@@ -17,21 +17,54 @@ class TweetMonitor:
         self.poll_rate = poll_rate
         self.start_dt: Optional[datetime] = None
 
-    def run(self):
-        logger.info("Program will monitor account '%s'" % self.twitter_handle)
+        self.twisc = Twisc()
+        self.user_id: Optional[str] = None
+        self.tweets: List[Dict[str, Any]] = []
+
+    def run(self, num_initial_tweets: int = 5):
+        logger.info("Program will monitor handle '%s'" % self.twitter_handle)
         self.start_dt = datetime.utcnow()
 
-        twisc = Twisc()
+        # Cache the user ID
+        self.user_id = self.twisc.get_user_id(self.twitter_handle)
+        if self.user_id is None:
+            logger.error("No user with handle '%s' could be found." % self.twitter_handle)
+            return
 
-        user_id = twisc.get_user_id(self.twitter_handle)
-
-        twisc.get_user_tweets(user_id)
+        self._fetch_initial_tweets(num_initial_tweets)
 
         while True:
-            time.sleep(0.1)
+            time.sleep(self.poll_rate)
+            self._fetch_subsequent_tweets()
 
     def stop(self):
         pass
+
+    def _fetch_initial_tweets(self, num_initial_tweets: int):
+        logger.debug("Fetching %d initial tweets..." % num_initial_tweets)
+        tweets = self.twisc.get_user_tweets(self.user_id)
+        tweets = tweets[-num_initial_tweets:]
+
+        self._notify_user_of_tweets(tweets)
+
+    def _fetch_subsequent_tweets(self):
+        logger.debug("Waking and checking for new tweets ...")
+        tweets = self.twisc.get_user_tweets(self.user_id)
+
+        new_tweets = filter(
+            lambda x: not any(x['id_str'] == y['id_str'] for y in self.tweets),
+            tweets)
+
+        self._notify_user_of_tweets(new_tweets)
+
+    def _notify_user_of_tweets(self, tweets: Iterable[Dict[str, Any]]):
+        for tweet in tweets:
+            logger.info("Tweet at %s: %s" % (tweet['created_at'], tweet['full_text']))
+            self.tweets.append(tweet)
+
+
+
+
 
 
 #
@@ -113,9 +146,12 @@ class Twisc:
         }
 
         result = self._session.get(base, params=variables)
-        result_text = result.text
         result_json = result.json()
 
-        # discard trash
-        entries = result_json['timeline']['instructions'][0]['addEntries']['entries']
+        all_tweets: List[Dict[str, Any]] = sorted(
+            result_json['globalObjects']['tweets'].values(),
+            key=lambda x: datetime.strptime(x['created_at'], '%a %b %d %H:%M:%S %z %Y'),
+            )
+
+        return all_tweets
 

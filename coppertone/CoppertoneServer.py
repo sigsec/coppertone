@@ -60,8 +60,15 @@ class _CoppertoneServerRequestHandler(BaseHTTPRequestHandler):
         self._render_obj_as_json(self._monitor.tweets)
 
     def render_status(self):
-        self._render_dict_as_json({
-            "server_started": self._monitor.start_dt,
-            "monitor_poll_rate": self._monitor.poll_rate,
-            "twitter_handle": self._monitor.twitter_handle,
+        self._render_obj_as_json({
+            "coppertone": {
+                "server_started": self._monitor.start_dt,
+                "requests_handled": self._server.requests_handled,
+            },
+            "monitor": {
+                "twitter_handle": self._monitor.twitter_handle,
+                "user_id": self._monitor.user_id,
+                "poll_rate": self._monitor.poll_rate,
+                "num_tweets_cached": len(self._monitor.tweets),
+            },
         })
